@@ -4,6 +4,8 @@ import FileUploader from "../components/FileUploader";
 import Toast from "../components/Toast";
 import { usePuterStore } from "~/lib/puter";
 import { convertPdfToImage } from "~/lib/pdf2img";
+import { generateUUID } from "~/lib/utils";
+import { prepareInstructions } from "constants/index";
 
 export default function Upload() {
   const { auth, isLoading, fs, ai, kv } = usePuterStore();
@@ -34,17 +36,48 @@ export default function Upload() {
     if (!uploadedFile) return setStatusText("Error uploading file");
     setStatusText("Converting to image...");
 
-    const imageBlob = await convertPdfToImage(file);
-    const imageFile = new File([imageBlob], "resume.png", {
-      type: "image/png",
-    });
+    const imageFile = await convertPdfToImage(file);
+    if (!imageFile.file)
+      return setStatusText(imageFile.error || "Error converting PDF to image");
 
-    setStatusText("Extracting text from image...");
-    const text = await ai.img2txt(imageFile);
-    if (!text) return setStatusText("Error extracting text");
+    setStatusText("Uploading the image...");
+    const uploadedImage = await fs.upload([imageFile.file]);
+    if (!uploadedImage) return setStatusText("Error uploading image");
 
-    setStatusText("Analyzing resume...");
-    // Further processing...
+    setStatusText("Preparing data...");
+
+    const uuid = generateUUID();
+
+    const data = {
+      id: uuid,
+      resumePath: uploadedFile.path,
+      imagePath: uploadedImage.path,
+      companyName,
+      jobTitle,
+      jobDescription,
+      feedback: "",
+    };
+    await kv.set(`resume-${uuid}`, JSON.stringify(data));
+    setStatusText("Analyzing the resume...");
+    const feedback = await ai.feedback(
+      uploadedFile.path,
+      prepareInstructions({ jobTitle, jobDescription })
+    );
+
+    if (!feedback) return setStatusText("Error analyzing the resume");
+
+    const feedbackText =
+      typeof feedback.message.content === "string"
+        ? feedback.message.content
+        : feedback.message.content[0].text;
+
+    data.feedback = JSON.parse(feedbackText);
+
+    await kv.set(`resume-${uuid}`, JSON.stringify(data));
+
+    setStatusText("Resume analyzed successfully, redirecting...");
+
+    console.log(data);
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
