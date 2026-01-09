@@ -30,7 +30,10 @@ export default function Summary({ feedback }: { feedback: Feedback }) {
   return (
     <div className="bg-white rounded-2xl shadow-md w-full">
       <div className="flex flex-row items-center p-4 gap-8">
-        <ScoreGauge score={feedback.ATS.score} />
+        <div className="flex flex-col">
+            <h3 className="text-sm font-bold text-center">ATS Score</h3>
+            <ScoreGauge score={feedback.ATS.score} />
+        </div>
 
         <div className="flex flex-col gap-2">
           <h2 className="text-2xl font-bold">Your Resume Score</h2>
