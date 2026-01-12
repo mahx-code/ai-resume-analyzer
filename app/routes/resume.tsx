@@ -52,7 +52,7 @@ export default function Resume() {
 
       setFeedback(data.feedback);
 
-      console.log({ resumeUrl, imageUrl, feedback: data.feedback });
+      // console.log({ resumeUrl, imageUrl, feedback: data.feedback });
     };
     loadResume();
   }, [id]);

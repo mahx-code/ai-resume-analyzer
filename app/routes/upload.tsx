@@ -92,7 +92,7 @@ export default function Upload() {
 
     setStatusText("Resume analyzed successfully, redirecting...");
 
-    console.log(data);
+    // console.log(data);
     navigate(`/resume/${uuid}`);
   };
 
